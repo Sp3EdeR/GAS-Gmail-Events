@@ -20,14 +20,14 @@ Run `processEventFeed()` to find or create the `event_feed` spreadsheet and its
 
 Messages must have the Gmail label `Értesítők/Események` to be considered for processing. Create a Gmail filter to apply this label to incoming mails with sender `googlealerts-noreply@google.com`. IMPORTANT: in the filter actions, uncheck the "Never send it to Spam"! Events are extracted exclusively from the `<script data-scope="inboxmarkup" type="application/json">` payload in the decoded HTML body.
 
-Events dated before one calendar month ago are removed to reduce spreadsheet bloat. But undated events may create bloat eventually, and must be manually removed from the spreadsheet.
+Events dated before one calendar month ago are removed to reduce spreadsheet bloat. A second filter removes undated events whose exact URL is already in the crawler's `google_events.json` feed and logs the number removed. If the feed cannot be fetched or parsed, the script logs that it skipped the second filter and keeps the undated rows.
 
 ## Apps Script Setup
 
 1. Create a standalone Apps Script project in the Gmail account receiving alerts.
 2. Add [Code.gs](Code.gs) and [EventParser.gs](EventParser.gs). Enable the manifest in project settings and use [appsscript.json](appsscript.json).
 3. The manifest registers the **Advanced Gmail service, v1**, and the V8 runtime. With a standard Google Cloud project, also enable the Gmail API in that project.
-4. Run `processEventFeed()` manually once and authorize Gmail modification, spreadsheet access and Drive discovery. Add a time-driven trigger as needed.
+4. Run `processEventFeed()` manually once and authorize Gmail modification, spreadsheet access, Drive discovery, and external requests. Add a time-driven trigger as needed.
 
 The feed spreadsheet is found by Drive name `event_feed`: the first Google Sheets file with that name is used, and one is created if none exists. Use an empty sheet or the named header columns above.
 
