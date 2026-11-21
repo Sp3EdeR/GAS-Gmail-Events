@@ -2,6 +2,7 @@ var feedFileName = "event_feed";
 var feedHeaders = ["start", "summary", "location", "description", "url"];
 var feedLabelName = "\u00c9rtes\u00edt\u0151k/Esem\u00e9nyek";
 var feedSender = "googlealerts-noreply@google.com";
+var googleEventsFeedUrl = "https://raw.githubusercontent.com/Sp3EdeR/autosesemenyek-advcrawler/refs/heads/feed/google_events.json";
 
 /**
  * Updates the event feed and trashes only messages successfully processed this run.
@@ -74,6 +75,13 @@ function processEventFeed() {
       !row[0] || cutoff <= row[0]
     );
     Logger.log(`Removed ${beforeFilter - rows.length} old rows; ${rows.length} rows remain.`);
+    var googleEventUrls = getProcessedEventUrls();
+    if (googleEventUrls) {
+      beforeFilter = rows.length;
+      rows = rows.filter(row => row[0] || !googleEventUrls.has(row[4]));
+      Logger.log(`Removed ${beforeFilter - rows.length} undated rows already in google_events.json; ${rows.length} rows remain.`);
+    }
+
     writeEventFeedRows(sheet, [feedHeaders].concat(rows));
     SpreadsheetApp.flush();
     Logger.log(`Updated the ${sheet.getName()} sheet.`);
@@ -93,6 +101,28 @@ function processEventFeed() {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * @return {Set<string>} Unique event URLs from the crawler feed.
+ */
+function getProcessedEventUrls() {
+  try {
+    var response = UrlFetchApp.fetch(googleEventsFeedUrl);
+    var events = JSON.parse(response.getContentText());
+    if (!Array.isArray(events))
+      throw new Error("Expected an array of events");
+    var urls = new Set();
+    for (var entry of events) {
+      var url = entry?.google_evt?.url;
+      if (typeof url === "string" && url.trim())
+        urls.add(url);
+    }
+    return urls;
+  } catch (error) {
+    Logger.log(`Could not load google_events.json (${error.message}).`);
+  }
+  return null;
 }
 
 /**

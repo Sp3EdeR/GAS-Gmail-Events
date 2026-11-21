@@ -119,5 +119,8 @@ function parseEventDate(value) {
   var month = months.map(m => m.slice(0, 3)).indexOf(english[1].slice(0, 3).toLowerCase()) + 1;
   var day = Number(english[2]);
   var date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 ||
+      date.getUTCDate() !== day)
+    throw new Error("Invalid date format: " + text);
   return date.toISOString().slice(0, 10);
 }
